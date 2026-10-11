@@ -74,4 +74,19 @@ data class ReviewSession(
             reviewedCount = decisions.size,
         )
     }
+
+    companion object {
+        /**
+         * A session over all [items] that begins with the item [startItemId]. The items before
+         * it are not skipped but come last, so the review still covers everything.
+         */
+        fun startingAt(items: List<MediaItem>, startItemId: Long?): ReviewSession {
+            val startIndex = items.indexOfFirst { it.id == startItemId }
+            return if (startIndex <= 0) {
+                ReviewSession(items)
+            } else {
+                ReviewSession(items.drop(startIndex) + items.take(startIndex))
+            }
+        }
+    }
 }

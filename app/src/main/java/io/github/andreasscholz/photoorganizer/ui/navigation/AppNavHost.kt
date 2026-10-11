@@ -8,19 +8,6 @@ import io.github.andreasscholz.photoorganizer.ui.folders.FolderSelectionScreen
 import io.github.andreasscholz.photoorganizer.ui.home.HomeScreen
 import io.github.andreasscholz.photoorganizer.ui.review.ReviewScreen
 import io.github.andreasscholz.photoorganizer.ui.settings.SettingsScreen
-import kotlinx.serialization.Serializable
-
-@Serializable
-private data object HomeRoute
-
-@Serializable
-private data object ReviewRoute
-
-@Serializable
-private data object SettingsRoute
-
-@Serializable
-private data object FolderSelectionRoute
 
 @Composable
 fun AppNavHost() {
@@ -28,7 +15,7 @@ fun AppNavHost() {
     NavHost(navController = navController, startDestination = HomeRoute) {
         composable<HomeRoute> {
             HomeScreen(
-                onStartReview = { navController.navigate(ReviewRoute) },
+                onStartReview = { startItemId -> navController.navigate(ReviewRoute(startItemId)) },
                 onOpenSettings = { navController.navigate(SettingsRoute) },
             )
         }

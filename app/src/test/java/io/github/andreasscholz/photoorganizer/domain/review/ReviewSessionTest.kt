@@ -147,6 +147,22 @@ class ReviewSessionTest {
     }
 
     @Test
+    fun `a session can begin at any item and still covers all of them`() {
+        val session = ReviewSession.startingAt(listOf(first, second, third), startItemId = second.id)
+
+        assertEquals(listOf(second, third, first), session.items)
+        assertEquals(second, session.current)
+    }
+
+    @Test
+    fun `a session begins at the first item if the start item is missing or unknown`() {
+        val items = listOf(first, second, third)
+
+        assertEquals(items, ReviewSession.startingAt(items, startItemId = null).items)
+        assertEquals(items, ReviewSession.startingAt(items, startItemId = 99).items)
+    }
+
+    @Test
     fun `undo on a fresh session does nothing`() {
         val session = ReviewSession(listOf(first))
 
