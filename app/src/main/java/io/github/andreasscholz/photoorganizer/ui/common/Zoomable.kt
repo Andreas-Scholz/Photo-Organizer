@@ -56,6 +56,14 @@ class ZoomState(private val maxScale: Float = 5f) {
         offset = Offset.Zero
     }
 
+    /**
+     * Call when the fingers are lifted. Pinching back out hardly ever ends at exactly the
+     * normal size; without snapping back the content would stay zoomed in imperceptibly.
+     */
+    fun settle() {
+        if (scale < SNAP_BACK_SCALE) reset()
+    }
+
     private fun zoomTo(newScale: Float, anchor: Offset, boxSize: Size, pan: Offset = Offset.Zero) {
         if (newScale <= 1f) return reset()
 
@@ -69,6 +77,7 @@ class ZoomState(private val maxScale: Float = 5f) {
 
     private companion object {
         const val DOUBLE_TAP_SCALE = 2.5f
+        const val SNAP_BACK_SCALE = 1.15f
     }
 }
 
@@ -104,6 +113,7 @@ fun ZoomableBox(
                             event.changes.forEach { if (it.positionChanged()) it.consume() }
                         }
                     } while (event.changes.any { it.pressed })
+                    state.settle()
                 }
             }
             .pointerInput(state) {

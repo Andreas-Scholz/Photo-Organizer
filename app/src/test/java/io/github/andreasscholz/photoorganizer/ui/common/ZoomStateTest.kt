@@ -66,6 +66,28 @@ class ZoomStateTest {
     }
 
     @Test
+    fun `barely zoomed content snaps back when the fingers are lifted`() {
+        val state = ZoomState()
+        state.transform(Offset(100f, 100f), Offset.Zero, zoom = 1.04f, boxSize = box)
+        assertTrue(state.isZoomed)
+
+        state.settle()
+
+        assertFalse(state.isZoomed)
+        assertEquals(Offset.Zero, state.offset)
+    }
+
+    @Test
+    fun `deliberately zoomed content stays zoomed when the fingers are lifted`() {
+        val state = ZoomState()
+        state.transform(Offset.Zero, Offset.Zero, zoom = 2f, boxSize = box)
+
+        state.settle()
+
+        assertEquals(2f, state.scale)
+    }
+
+    @Test
     fun `double tap zooms in on the tapped position and back out`() {
         val state = ZoomState()
         val tap = Offset(100f, 100f)
