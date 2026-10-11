@@ -13,12 +13,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 /** Share of the card width that has to be dragged for a swipe to count. */
 private const val SWIPE_THRESHOLD = 0.3f
+
+/** A drag released faster than this counts as a swipe regardless of its length. */
+private val FLING_VELOCITY = 600.dp
 private const val MAX_ROTATION_DEGREES = 8f
 
 /**
@@ -46,11 +52,17 @@ fun SwipeableCard(
             .onSizeChanged { width = it.width }
             .pointerInput(Unit) {
                 val threshold = size.width * SWIPE_THRESHOLD
+                val flingVelocity = FLING_VELOCITY.toPx()
+                val velocityTracker = VelocityTracker()
                 detectHorizontalDragGestures(
+                    onDragStart = { velocityTracker.resetTracking() },
                     onDragEnd = {
+                        val velocity = velocityTracker.calculateVelocity().x
                         scope.launch {
                             val offset = offsetX.value
-                            if (abs(offset) < threshold) {
+                            // A quick flick only counts in the direction the card was moved to.
+                            val isFling = abs(velocity) > flingVelocity && velocity * offset > 0
+                            if (abs(offset) < threshold && !isFling) {
                                 offsetX.animateTo(0f)
                             } else {
                                 // Fly out far enough that the rotated card fully leaves the screen.
@@ -62,6 +74,7 @@ fun SwipeableCard(
                     onDragCancel = { scope.launch { offsetX.animateTo(0f) } },
                     onHorizontalDrag = { change, dragAmount ->
                         change.consume()
+                        velocityTracker.addPointerInputChange(change)
                         scope.launch { offsetX.snapTo(offsetX.value + dragAmount) }
                     },
                 )
