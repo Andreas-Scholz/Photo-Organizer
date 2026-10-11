@@ -1,8 +1,10 @@
 package io.github.andreasscholz.photoorganizer.ui.review
 
 import android.content.IntentSender
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.andreasscholz.photoorganizer.data.ReviewMediaSource
 import io.github.andreasscholz.photoorganizer.data.media.MediaRepository
@@ -13,6 +15,7 @@ import io.github.andreasscholz.photoorganizer.domain.review.ChangePlan
 import io.github.andreasscholz.photoorganizer.domain.review.Disposition
 import io.github.andreasscholz.photoorganizer.domain.review.ReviewSession
 import io.github.andreasscholz.photoorganizer.reminder.ReminderNotifier
+import io.github.andreasscholz.photoorganizer.ui.navigation.ReviewRoute
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,12 +62,14 @@ private fun ChangePlan.toSteps(): List<ChangeStep> = buildList {
 
 @HiltViewModel
 class ReviewViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val mediaRepository: MediaRepository,
     private val reviewMediaSource: ReviewMediaSource,
     private val settingsRepository: SettingsRepository,
     private val reminderNotifier: ReminderNotifier,
 ) : ViewModel() {
 
+    private val route = savedStateHandle.toRoute<ReviewRoute>()
     private val date: LocalDate = LocalDate.now()
 
     private val _uiState = MutableStateFlow(ReviewUiState())
@@ -82,7 +87,11 @@ class ReviewViewModel @Inject constructor(
         viewModelScope.launch {
             val items = reviewMediaSource.mediaOnThisDay(date)
             val albums = mediaRepository.albums()
-            _uiState.update { it.copy(isLoading = false, session = ReviewSession(items), albums = albums) }
+            _uiState.update { it.copy(
+                    isLoading = false,
+                    session = ReviewSession.startingAt(items, route.startItemId),
+                    albums = albums,
+                ) }
         }
     }
 

@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,13 +57,15 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.andreasscholz.photoorganizer.R
 import io.github.andreasscholz.photoorganizer.data.media.MediaAccess
+import io.github.andreasscholz.photoorganizer.domain.model.MediaItem
 import io.github.andreasscholz.photoorganizer.ui.common.MediaThumbnail
 import io.github.andreasscholz.photoorganizer.ui.common.formatDayOfYear
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onStartReview: () -> Unit,
+    /** Called with the item to begin with, or null to start at the first one. */
+    onStartReview: (startItemId: Long?) -> Unit,
     onOpenSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -114,7 +117,7 @@ fun HomeScreen(
             if (mediaAccess.canRead && state.mediaCount > 0) {
                 Surface(tonalElevation = 3.dp) {
                     Button(
-                        onClick = onStartReview,
+                        onClick = { onStartReview(null) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
@@ -147,6 +150,7 @@ fun HomeScreen(
             else -> DayOverview(
                 state = state,
                 showPartialAccessHint = mediaAccess == MediaAccess.PARTIAL,
+                onItemClick = { item -> onStartReview(item.id) },
                 onOpenSettings = { context.openAppSettings() },
                 contentPadding = innerPadding,
             )
@@ -158,6 +162,7 @@ fun HomeScreen(
 private fun DayOverview(
     state: HomeUiState,
     showPartialAccessHint: Boolean,
+    onItemClick: (MediaItem) -> Unit,
     onOpenSettings: () -> Unit,
     contentPadding: PaddingValues,
 ) {
@@ -253,7 +258,8 @@ private fun DayOverview(
                         item = item,
                         modifier = Modifier
                             .size(112.dp)
-                            .clip(RoundedCornerShape(8.dp)),
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onItemClick(item) },
                     )
                 }
             }
