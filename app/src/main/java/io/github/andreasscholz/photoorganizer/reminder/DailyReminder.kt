@@ -31,7 +31,7 @@ class DailyReminder @Inject constructor(
         if (!settingsRepository.reminderSettings.first().enabled) return
 
         val today = LocalDate.now()
-        if (settingsRepository.lastCompletedDay.first() == today) return
+        if (today in settingsRepository.completedDays.first()) return
 
         val mediaCount = if (MediaAccess.of(context).canRead) {
             reviewMediaSource.mediaOnThisDay(today).size

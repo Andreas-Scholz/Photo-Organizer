@@ -35,9 +35,11 @@ class SettingsRepository @Inject constructor(
         )
     }.distinctUntilChanged()
 
-    /** The most recent day whose review was finished, if any. */
-    val lastCompletedDay: Flow<LocalDate?> = dataStore.data.map { preferences ->
-        preferences[LAST_COMPLETED_DAY]?.let(LocalDate::parse)
+    /** The days whose review was finished. */
+    val completedDays: Flow<Set<LocalDate>> = dataStore.data.map { preferences ->
+        // Versions before day navigation only stored the last completed day.
+        val days = preferences[COMPLETED_DAYS].orEmpty() + listOfNotNull(preferences[LAST_COMPLETED_DAY])
+        days.mapTo(mutableSetOf(), LocalDate::parse)
     }.distinctUntilChanged()
 
     /** Which folders the review covers; everything unless the user picked folders. */
@@ -63,13 +65,14 @@ class SettingsRepository @Inject constructor(
     }
 
     suspend fun markDayCompleted(day: LocalDate) {
-        dataStore.edit { it[LAST_COMPLETED_DAY] = day.toString() }
+        dataStore.edit { it[COMPLETED_DAYS] = it[COMPLETED_DAYS].orEmpty() + day.toString() }
     }
 
     private companion object {
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_MINUTE_OF_DAY = intPreferencesKey("reminder_minute_of_day")
         val LAST_COMPLETED_DAY = stringPreferencesKey("last_completed_day")
+        val COMPLETED_DAYS = stringSetPreferencesKey("completed_days")
         val REVIEW_FOLDERS = stringSetPreferencesKey("review_folders")
     }
 }

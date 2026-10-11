@@ -16,7 +16,11 @@
     </plurals>
     <string name="home_start_review">Durchsehen starten</string>
     <string name="home_review_again">Erneut durchsehen</string>
-    <string name="home_completed">Für heute erledigt</string>
+    <string name="home_completed">Erledigt</string>
+    <string name="home_previous_day">Vorheriger Tag</string>
+    <string name="home_next_day">Nächster Tag</string>
+    <string name="home_today">Zurück zu heute</string>
+    <string name="home_pick_day">Tag auswählen</string>
     <string name="home_empty_title">Nichts zu tun</string>
     <string name="home_empty_text">Von diesem Tag gibt es keine Fotos oder Videos.</string>
     <string name="home_partial_access">Es sind nur die von dir ausgewählten Fotos sichtbar. Erlaube den Zugriff auf alle Fotos, um den ganzen Tag zu sehen.</string>

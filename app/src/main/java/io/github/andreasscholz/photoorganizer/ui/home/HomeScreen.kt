@@ -27,6 +27,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,12 +63,15 @@ import io.github.andreasscholz.photoorganizer.data.media.MediaAccess
 import io.github.andreasscholz.photoorganizer.domain.model.MediaItem
 import io.github.andreasscholz.photoorganizer.ui.common.MediaThumbnail
 import io.github.andreasscholz.photoorganizer.ui.common.formatDayOfYear
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    /** Called with the item to begin with, or null to start at the first one. */
-    onStartReview: (startItemId: Long?) -> Unit,
+    /** Called with the day to review and the item to begin with, or null for the first one. */
+    onStartReview: (date: LocalDate, startItemId: Long?) -> Unit,
     onOpenSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -117,7 +123,7 @@ fun HomeScreen(
             if (mediaAccess.canRead && state.mediaCount > 0) {
                 Surface(tonalElevation = 3.dp) {
                     Button(
-                        onClick = { onStartReview(null) },
+                        onClick = { onStartReview(state.date, null) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
@@ -140,17 +146,14 @@ fun HomeScreen(
                 modifier = Modifier.padding(innerPadding),
             )
 
-            state.isLoading -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center,
-            ) { CircularProgressIndicator() }
-
             else -> DayOverview(
                 state = state,
                 showPartialAccessHint = mediaAccess == MediaAccess.PARTIAL,
-                onItemClick = { item -> onStartReview(item.id) },
+                onPreviousDay = viewModel::showPreviousDay,
+                onNextDay = viewModel::showNextDay,
+                onToday = viewModel::showToday,
+                onDayPicked = viewModel::showDay,
+                onItemClick = { item -> onStartReview(state.date, item.id) },
                 onOpenSettings = { context.openAppSettings() },
                 contentPadding = innerPadding,
             )
@@ -162,6 +165,10 @@ fun HomeScreen(
 private fun DayOverview(
     state: HomeUiState,
     showPartialAccessHint: Boolean,
+    onPreviousDay: () -> Unit,
+    onNextDay: () -> Unit,
+    onToday: () -> Unit,
+    onDayPicked: (LocalDate) -> Unit,
     onItemClick: (MediaItem) -> Unit,
     onOpenSettings: () -> Unit,
     contentPadding: PaddingValues,
@@ -171,11 +178,15 @@ private fun DayOverview(
         contentPadding = contentPadding,
     ) {
         item {
+            DaySelector(
+                date = state.date,
+                isToday = state.isToday,
+                onPreviousDay = onPreviousDay,
+                onNextDay = onNextDay,
+                onToday = onToday,
+                onDayPicked = onDayPicked,
+            )
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Text(
-                    text = formatDayOfYear(state.date),
-                    style = MaterialTheme.typography.displaySmall,
-                )
                 if (state.mediaCount > 0) {
                     Text(
                         text = stringResource(
@@ -233,7 +244,16 @@ private fun DayOverview(
             }
         }
 
-        if (state.mediaCount == 0) {
+        if (state.isLoading) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillParentMaxHeight(0.6f),
+                    contentAlignment = Alignment.Center,
+                ) { CircularProgressIndicator() }
+            }
+        } else if (state.mediaCount == 0) {
             item {
                 Message(
                     title = stringResource(R.string.home_empty_title),
@@ -263,6 +283,82 @@ private fun DayOverview(
                     )
                 }
             }
+        }
+    }
+}
+
+/** The shown day with controls to page through the calendar or jump to a day. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DaySelector(
+    date: LocalDate,
+    isToday: Boolean,
+    onPreviousDay: () -> Unit,
+    onNextDay: () -> Unit,
+    onToday: () -> Unit,
+    onDayPicked: (LocalDate) -> Unit,
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onPreviousDay) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_chevron_left),
+                    contentDescription = stringResource(R.string.home_previous_day),
+                )
+            }
+            Text(
+                text = formatDayOfYear(date),
+                style = MaterialTheme.typography.displaySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(onClickLabel = stringResource(R.string.home_pick_day)) { showDatePicker = true }
+                    .padding(vertical = 4.dp),
+            )
+            IconButton(onClick = onNextDay) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_chevron_right),
+                    contentDescription = stringResource(R.string.home_next_day),
+                )
+            }
+        }
+        if (!isToday) {
+            TextButton(onClick = onToday) { Text(stringResource(R.string.home_today)) }
+        }
+    }
+
+    if (showDatePicker) {
+        // The picker works with UTC midnights, whatever the device's time zone is.
+        val pickerState = rememberDatePickerState(
+            initialSelectedDateMillis = date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDatePicker = false
+                        pickerState.selectedDateMillis?.let { millis ->
+                            onDayPicked(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
+                        }
+                    },
+                ) { Text(stringResource(R.string.action_ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        ) {
+            DatePicker(state = pickerState)
         }
     }
 }

@@ -15,7 +15,9 @@ fun AppNavHost() {
     NavHost(navController = navController, startDestination = HomeRoute) {
         composable<HomeRoute> {
             HomeScreen(
-                onStartReview = { startItemId -> navController.navigate(ReviewRoute(startItemId)) },
+                onStartReview = { date, startItemId ->
+                    navController.navigate(ReviewRoute(date.toEpochDay(), startItemId))
+                },
                 onOpenSettings = { navController.navigate(SettingsRoute) },
             )
         }
