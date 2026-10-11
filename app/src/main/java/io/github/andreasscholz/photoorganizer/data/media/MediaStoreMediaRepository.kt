@@ -11,6 +11,8 @@ import android.util.Log
 import io.github.andreasscholz.photoorganizer.di.IoDispatcher
 import io.github.andreasscholz.photoorganizer.domain.anniversaryRangesOf
 import io.github.andreasscholz.photoorganizer.domain.model.Album
+import io.github.andreasscholz.photoorganizer.domain.model.FolderFilter
+import io.github.andreasscholz.photoorganizer.domain.model.MediaFolder
 import io.github.andreasscholz.photoorganizer.domain.model.MediaItem
 import io.github.andreasscholz.photoorganizer.domain.model.MediaType
 import kotlinx.coroutines.CoroutineDispatcher
@@ -40,7 +42,13 @@ class MediaStoreMediaRepository @Inject constructor(
 
     private val collection: Uri = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
 
-    override suspend fun mediaOnThisDay(date: LocalDate): List<MediaItem> = withContext(ioDispatcher) {
+    override suspend fun mediaOnThisDay(
+        date: LocalDate,
+        folderFilter: FolderFilter,
+    ): List<MediaItem> = withContext(ioDispatcher) {
+        val folderPaths = (folderFilter as? FolderFilter.Only)?.relativePaths
+        if (folderPaths != null && folderPaths.isEmpty()) return@withContext emptyList()
+
         val zone = ZoneId.systemDefault()
         val ranges = anniversaryRangesOf(date, zone)
 
@@ -49,10 +57,13 @@ class MediaStoreMediaRepository @Inject constructor(
         // DATE_MODIFIED (seconds), which unlike the date added survives a move to a new phone.
         val dayClause = "(($DATE_TAKEN >= ? AND $DATE_TAKEN < ?) OR " +
             "($DATE_TAKEN IS NULL AND $DATE_MODIFIED >= ? AND $DATE_MODIFIED < ?))"
-        val selection = "$IS_VISUAL_MEDIA AND (${ranges.joinToString(" OR ") { dayClause }})"
+        val folderClause = folderPaths
+            ?.let { " AND ${FileColumns.RELATIVE_PATH} IN (${it.joinToString { "?" }})" }
+            .orEmpty()
+        val selection = "$IS_VISUAL_MEDIA AND (${ranges.joinToString(" OR ") { dayClause }})$folderClause"
         val selectionArgs = ranges.flatMap {
             listOf(it.startMillis, it.endMillis, it.startMillis / 1000, it.endMillis / 1000)
-        }.map(Long::toString).toTypedArray()
+        }.map(Long::toString).plus(folderPaths.orEmpty()).toTypedArray()
 
         val projection = arrayOf(
             FileColumns._ID,
@@ -92,22 +103,29 @@ class MediaStoreMediaRepository @Inject constructor(
         items.sortedWith(compareByDescending<MediaItem> { it.capturedAt.year }.thenBy { it.capturedAt })
     }
 
-    override suspend fun albums(): List<Album> = withContext(ioDispatcher) {
+    override suspend fun folders(): List<MediaFolder> = withContext(ioDispatcher) {
         val projection = arrayOf(FileColumns.BUCKET_DISPLAY_NAME, FileColumns.RELATIVE_PATH)
-        val albums = mutableMapOf<String, Album>()
+        val names = mutableMapOf<String, String>()
+        val counts = mutableMapOf<String, Int>()
         contentResolver.query(collection, projection, IS_VISUAL_MEDIA, null, null)?.use { cursor ->
             val nameColumn = cursor.getColumnIndexOrThrow(FileColumns.BUCKET_DISPLAY_NAME)
             val pathColumn = cursor.getColumnIndexOrThrow(FileColumns.RELATIVE_PATH)
             while (cursor.moveToNext()) {
                 val path = cursor.getString(pathColumn) ?: continue
                 val name = cursor.getString(nameColumn) ?: continue
-                if (path !in albums && SHARED_MEDIA_ROOTS.any { path.startsWith(it) }) {
-                    albums[path] = Album(name, path)
-                }
+                names.getOrPut(path) { name }
+                counts[path] = (counts[path] ?: 0) + 1
             }
         }
-        albums.values.sortedBy { it.name.lowercase() }
+        names
+            .map { (path, name) -> MediaFolder(name, path, counts.getValue(path)) }
+            .sortedWith(compareByDescending<MediaFolder> { it.itemCount }.thenBy { it.name.lowercase() })
     }
+
+    override suspend fun albums(): List<Album> = folders()
+        .filter { folder -> SHARED_MEDIA_ROOTS.any { folder.relativePath.startsWith(it) } }
+        .map { Album(it.name, it.relativePath) }
+        .sortedBy { it.name.lowercase() }
 
     override fun createTrashRequest(items: List<MediaItem>): IntentSender =
         MediaStore.createTrashRequest(contentResolver, items.map { it.contentUri }, true).intentSender

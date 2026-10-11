@@ -3,8 +3,9 @@ package io.github.andreasscholz.photoorganizer.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.andreasscholz.photoorganizer.data.media.MediaRepository
+import io.github.andreasscholz.photoorganizer.data.ReviewMediaSource
 import io.github.andreasscholz.photoorganizer.data.settings.SettingsRepository
+import io.github.andreasscholz.photoorganizer.domain.model.FolderFilter
 import io.github.andreasscholz.photoorganizer.domain.model.MediaItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,13 +24,15 @@ data class HomeUiState(
     /** Today's media grouped by the year it was captured in, newest year first. */
     val years: List<YearGroup> = emptyList(),
     val isCompleted: Boolean = false,
+    /** Number of folders the review is restricted to, or null if it covers all of them. */
+    val selectedFolderCount: Int? = null,
 ) {
     val mediaCount: Int get() = years.sumOf { it.items.size }
 }
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val mediaRepository: MediaRepository,
+    private val reviewMediaSource: ReviewMediaSource,
     settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
@@ -38,7 +41,11 @@ class HomeViewModel @Inject constructor(
     private val snapshot = MutableStateFlow(Snapshot(LocalDate.now(), media = null))
 
     val uiState: StateFlow<HomeUiState> =
-        combine(snapshot, settingsRepository.lastCompletedDay) { snapshot, lastCompletedDay ->
+        combine(
+            snapshot,
+            settingsRepository.lastCompletedDay,
+            settingsRepository.folderFilter,
+        ) { snapshot, lastCompletedDay, folderFilter ->
             HomeUiState(
                 date = snapshot.date,
                 isLoading = snapshot.media == null,
@@ -46,6 +53,7 @@ class HomeViewModel @Inject constructor(
                     .groupBy { it.capturedAt.year }
                     .map { (year, items) -> YearGroup(year, items) },
                 isCompleted = lastCompletedDay == snapshot.date,
+                selectedFolderCount = (folderFilter as? FolderFilter.Only)?.relativePaths?.size,
             )
         }.stateIn(
             scope = viewModelScope,
@@ -57,7 +65,7 @@ class HomeViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             val today = LocalDate.now()
-            snapshot.value = Snapshot(today, mediaRepository.mediaOnThisDay(today))
+            snapshot.value = Snapshot(today, reviewMediaSource.mediaOnThisDay(today))
         }
     }
 }

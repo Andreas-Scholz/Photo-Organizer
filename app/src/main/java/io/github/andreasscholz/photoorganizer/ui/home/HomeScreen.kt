@@ -182,6 +182,13 @@ private fun DayOverview(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                state.selectedFolderCount?.let { folderCount ->
+                    Text(
+                        text = pluralStringResource(R.plurals.home_folder_filter, folderCount, folderCount),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (state.isCompleted) {
                     Row(
                         modifier = Modifier.padding(top = 8.dp),

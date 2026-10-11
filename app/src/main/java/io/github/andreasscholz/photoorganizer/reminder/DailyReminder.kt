@@ -3,7 +3,7 @@ package io.github.andreasscholz.photoorganizer.reminder
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.andreasscholz.photoorganizer.data.media.MediaAccess
-import io.github.andreasscholz.photoorganizer.data.media.MediaRepository
+import io.github.andreasscholz.photoorganizer.data.ReviewMediaSource
 import io.github.andreasscholz.photoorganizer.data.settings.SettingsRepository
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
@@ -15,7 +15,7 @@ import javax.inject.Singleton
 class DailyReminder @Inject constructor(
     @ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
-    private val mediaRepository: MediaRepository,
+    private val reviewMediaSource: ReviewMediaSource,
     private val scheduler: ReminderScheduler,
     private val notifier: ReminderNotifier,
 ) {
@@ -34,7 +34,7 @@ class DailyReminder @Inject constructor(
         if (settingsRepository.lastCompletedDay.first() == today) return
 
         val mediaCount = if (MediaAccess.of(context).canRead) {
-            mediaRepository.mediaOnThisDay(today).size
+            reviewMediaSource.mediaOnThisDay(today).size
         } else {
             null
         }
