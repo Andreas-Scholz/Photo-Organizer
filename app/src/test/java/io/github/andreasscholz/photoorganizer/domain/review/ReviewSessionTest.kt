@@ -74,6 +74,97 @@ class ReviewSessionTest {
         assertEquals(2, plan.keptCount)
     }
 
+    // Browsing
+
+    @Test
+    fun `browsing moves between items without deciding anything`() {
+        val session = ReviewSession(listOf(first, second, third)).goForward().goForward()
+
+        assertEquals(third, session.current)
+        assertEquals(3, session.position)
+        assertEquals(second, session.goBack().current)
+        assertTrue(session.decisions.isEmpty())
+    }
+
+    @Test
+    fun `browsing stops at the first and the last item`() {
+        val session = ReviewSession(listOf(first, second))
+
+        assertEquals(first, session.goBack().current)
+        assertEquals(second, session.goForward().goForward().current)
+    }
+
+    @Test
+    fun `any item can be jumped to`() {
+        val session = ReviewSession(listOf(first, second, third))
+
+        assertEquals(third, session.goTo(third.id).current)
+        assertEquals(session, session.goTo(99))
+    }
+
+    @Test
+    fun `a session can begin at any item and keeps the order of the items`() {
+        val session = ReviewSession.startingAt(listOf(first, second, third), startItemId = second.id)
+
+        assertEquals(listOf(first, second, third), session.items)
+        assertEquals(second, session.current)
+    }
+
+    @Test
+    fun `a session begins at the first item if the start item is missing or unknown`() {
+        val items = listOf(first, second, third)
+
+        assertEquals(first, ReviewSession.startingAt(items, startItemId = null).current)
+        assertEquals(first, ReviewSession.startingAt(items, startItemId = 99).current)
+    }
+
+    // Deciding while browsing
+
+    @Test
+    fun `deciding skips items that are already decided`() {
+        val session = ReviewSession(listOf(first, second, third))
+            .goTo(second.id)
+            .decide(Disposition.Delete)
+            .goBack()
+            .goBack()
+            .decide(Disposition.Keep)
+
+        assertEquals(third, session.current)
+    }
+
+    @Test
+    fun `after the last item deciding continues with open items from the start`() {
+        val session = ReviewSession(listOf(first, second, third))
+            .goTo(third.id)
+            .decide(Disposition.Keep)
+
+        assertEquals(first, session.current)
+        assertFalse(session.isFinished)
+    }
+
+    @Test
+    fun `a decided item can be visited and decided again`() {
+        val session = ReviewSession(listOf(first, second))
+            .decide(Disposition.Delete)
+            .goBack()
+        assertEquals(Disposition.Delete, session.dispositionOf(first))
+
+        val plan = session
+            .decide(Disposition.Keep)
+            .decide(Disposition.Keep)
+            .toChangePlan()
+
+        assertTrue(plan.toTrash.isEmpty())
+        assertEquals(2, plan.reviewedCount)
+    }
+
+    @Test
+    fun `open items have no disposition`() {
+        assertNull(ReviewSession(listOf(first)).dispositionOf(first))
+    }
+
+    // Favorites
+
     @Test
     fun `favorite toggle applies to the current item only`() {
         val plan = ReviewSession(listOf(first, second))
@@ -120,46 +211,53 @@ class ReviewSessionTest {
     }
 
     @Test
-    fun `undo returns to the previous item and restores its favorite toggle`() {
+    fun `an item stays favorite while browsing away and back`() {
         val session = ReviewSession(listOf(first, second))
             .toggleFavorite()
+            .goForward()
+        assertFalse(session.currentIsFavorite)
+
+        assertTrue(session.goBack().currentIsFavorite)
+    }
+
+    @Test
+    fun `a decided item can still be marked as favorite`() {
+        val plan = ReviewSession(listOf(first, second))
+            .decide(Disposition.Keep)
+            .goBack()
+            .toggleFavorite()
+            .goForward()
+            .decide(Disposition.Keep)
+            .toChangePlan()
+
+        assertEquals(listOf(first), plan.toFavorite)
+    }
+
+    // Undo
+
+    @Test
+    fun `undo takes back the latest decision and returns to its item`() {
+        val session = ReviewSession(listOf(first, second, third))
             .decide(Disposition.Delete)
+            .goForward()
         assertTrue(session.canUndo)
 
         val undone = session.undo()
 
         assertEquals(first, undone.current)
-        assertTrue(undone.currentIsFavorite)
+        assertNull(undone.dispositionOf(first))
         assertFalse(undone.canUndo)
-        assertTrue(undone.decisions.isEmpty())
     }
 
     @Test
-    fun `undo discards a favorite toggle on the item being left`() {
+    fun `undo reopens a finished session`() {
         val session = ReviewSession(listOf(first, second))
             .decide(Disposition.Keep)
-            .toggleFavorite()
+            .decide(Disposition.Delete)
             .undo()
-            .decide(Disposition.Keep)
 
+        assertFalse(session.isFinished)
         assertEquals(second, session.current)
-        assertFalse(session.currentIsFavorite)
-    }
-
-    @Test
-    fun `a session can begin at any item and still covers all of them`() {
-        val session = ReviewSession.startingAt(listOf(first, second, third), startItemId = second.id)
-
-        assertEquals(listOf(second, third, first), session.items)
-        assertEquals(second, session.current)
-    }
-
-    @Test
-    fun `a session begins at the first item if the start item is missing or unknown`() {
-        val items = listOf(first, second, third)
-
-        assertEquals(items, ReviewSession.startingAt(items, startItemId = null).items)
-        assertEquals(items, ReviewSession.startingAt(items, startItemId = 99).items)
     }
 
     @Test

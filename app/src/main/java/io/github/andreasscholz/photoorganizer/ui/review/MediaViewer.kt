@@ -3,8 +3,7 @@ package io.github.andreasscholz.photoorganizer.ui.review
 import android.net.Uri
 import android.view.LayoutInflater
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -17,10 +16,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -43,19 +45,55 @@ import androidx.media3.common.MediaItem as PlayerMediaItem
 /** Longest edge, in pixels, at which a photo is loaded once the user zooms in. */
 private const val DETAIL_SIZE = 4096
 
-/** Shows a zoomable photo, or a video that starts playing once its play button is tapped. */
-@Composable
-fun MediaViewer(item: MediaItem, modifier: Modifier = Modifier) {
-    Box(modifier = modifier.background(Color.Black), contentAlignment = Alignment.Center) {
-        when (item.type) {
-            MediaType.IMAGE -> ZoomablePhoto(item)
-            MediaType.VIDEO -> Video(item)
+/** The outer thirds of the viewer browse to the neighboring items when tapped. */
+private enum class TapZone {
+    PREVIOUS, CENTER, NEXT;
+
+    companion object {
+        fun at(x: Float, width: Int): TapZone = when {
+            x < width / 3f -> PREVIOUS
+            x > width * 2 / 3f -> NEXT
+            else -> CENTER
         }
     }
 }
 
+/**
+ * Shows a zoomable photo, or a video that starts playing once its play button is tapped.
+ * Tapping the left or right third calls [onPrevious] or [onNext].
+ */
 @Composable
-private fun ZoomablePhoto(item: MediaItem) {
+fun MediaViewer(
+    item: MediaItem,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val onZoneTapped: (TapZone) -> Unit = { zone ->
+        when (zone) {
+            TapZone.PREVIOUS -> onPrevious()
+            TapZone.NEXT -> onNext()
+            TapZone.CENTER -> Unit
+        }
+    }
+    Box(modifier = modifier.background(Color.Black), contentAlignment = Alignment.Center) {
+        when (item.type) {
+            MediaType.IMAGE -> ZoomablePhoto(item, onZoneTapped)
+            MediaType.VIDEO -> Video(item, onZoneTapped)
+        }
+    }
+}
+
+/** Reports which [TapZone] was tapped, without getting in the way of drags. */
+private fun Modifier.tapZones(onTap: (TapZone) -> Unit): Modifier = composed {
+    val currentOnTap by rememberUpdatedState(onTap)
+    pointerInput(Unit) {
+        detectTapGestures(onTap = { position -> currentOnTap(TapZone.at(position.x, size.width)) })
+    }
+}
+
+@Composable
+private fun ZoomablePhoto(item: MediaItem, onZoneTapped: (TapZone) -> Unit) {
     val zoomState = remember(item.id) { ZoomState() }
 
     // Photos are first decoded at screen size, which is fast but blurry when magnified.
@@ -65,7 +103,11 @@ private fun ZoomablePhoto(item: MediaItem) {
         if (zoomState.isZoomed) showDetail = true
     }
 
-    ZoomableBox(state = zoomState, modifier = Modifier.fillMaxSize()) {
+    ZoomableBox(
+        state = zoomState,
+        modifier = Modifier.fillMaxSize(),
+        onTap = { position, boxSize -> onZoneTapped(TapZone.at(position.x, boxSize.width)) },
+    ) {
         AsyncImage(
             model = item.contentUri,
             contentDescription = item.displayName,
@@ -90,17 +132,19 @@ private fun ZoomablePhoto(item: MediaItem) {
 }
 
 @Composable
-private fun Video(item: MediaItem) {
+private fun Video(item: MediaItem, onZoneTapped: (TapZone) -> Unit) {
     var isStarted by remember(item.id) { mutableStateOf(false) }
 
     if (isStarted) {
-        VideoPlayer(uri = item.contentUri, modifier = Modifier.fillMaxSize())
+        VideoPlayer(uri = item.contentUri, onZoneTapped = onZoneTapped, modifier = Modifier.fillMaxSize())
     } else {
         AsyncImage(
             model = item.contentUri,
             contentDescription = item.displayName,
             contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .tapZones(onZoneTapped),
         )
         FilledTonalIconButton(
             onClick = { isStarted = true },
@@ -115,9 +159,9 @@ private fun Video(item: MediaItem) {
     }
 }
 
-/** Plays [uri] right away; tapping the picture pauses and resumes it. */
+/** Plays [uri] right away; tapping the middle of the picture pauses and resumes it. */
 @Composable
-private fun VideoPlayer(uri: Uri, modifier: Modifier = Modifier) {
+private fun VideoPlayer(uri: Uri, onZoneTapped: (TapZone) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val player = remember(uri) {
         ExoPlayer.Builder(context).build().apply {
@@ -152,8 +196,9 @@ private fun VideoPlayer(uri: Uri, modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                .tapZones { zone ->
                     when {
+                        zone != TapZone.CENTER -> onZoneTapped(zone)
                         player.playbackState == Player.STATE_ENDED -> {
                             player.seekTo(0)
                             player.play()

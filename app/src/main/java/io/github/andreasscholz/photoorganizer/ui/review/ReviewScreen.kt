@@ -48,6 +48,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.andreasscholz.photoorganizer.R
 import io.github.andreasscholz.photoorganizer.domain.model.MediaItem
+import io.github.andreasscholz.photoorganizer.domain.review.Disposition
 import io.github.andreasscholz.photoorganizer.ui.common.formatFullDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -132,6 +133,9 @@ fun ReviewScreen(
             currentItem != null -> ReviewCard(
                 item = currentItem,
                 isFavorite = session.currentIsFavorite,
+                disposition = session.dispositionOf(currentItem),
+                onPrevious = viewModel::showPrevious,
+                onNext = viewModel::showNext,
                 onDelete = viewModel::delete,
                 onKeep = viewModel::keep,
                 onToggleFavorite = viewModel::toggleFavorite,
@@ -182,11 +186,17 @@ fun ReviewScreen(
     }
 }
 
-/** The current item with its actions: swipe left to delete, right to keep. */
+/**
+ * The current item with its actions: swipe left to delete, right to keep, or tap its left
+ * or right side to browse without deciding. [disposition] is an earlier decision, if any.
+ */
 @Composable
 private fun ReviewCard(
     item: MediaItem,
     isFavorite: Boolean,
+    disposition: Disposition?,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
     onDelete: () -> Unit,
     onKeep: () -> Unit,
     onToggleFavorite: () -> Unit,
@@ -209,7 +219,15 @@ private fun ReviewCard(
                         .fillMaxSize()
                         .clip(RoundedCornerShape(16.dp)),
                 ) {
-                    MediaViewer(item = item, modifier = Modifier.fillMaxSize())
+                    MediaViewer(
+                        item = item,
+                        onPrevious = onPrevious,
+                        onNext = onNext,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    if (disposition != null) {
+                        DecisionBadge(disposition, modifier = Modifier.align(Alignment.BottomStart))
+                    }
                     SwipeLabel(
                         text = stringResource(R.string.review_keep),
                         color = MaterialTheme.colorScheme.primary,
@@ -268,12 +286,38 @@ private fun SwipeLabel(
     alpha: () -> Float,
     modifier: Modifier = Modifier,
 ) {
+    CardLabel(text = text, color = color, modifier = modifier.graphicsLayer { this.alpha = alpha() })
+}
+
+/** Shows what has already been decided for the item, as it can be visited again. */
+@Composable
+private fun DecisionBadge(disposition: Disposition, modifier: Modifier = Modifier) {
+    when (disposition) {
+        Disposition.Keep -> CardLabel(
+            text = stringResource(R.string.review_keep),
+            color = MaterialTheme.colorScheme.primary,
+            modifier = modifier,
+        )
+        Disposition.Delete -> CardLabel(
+            text = stringResource(R.string.review_delete),
+            color = MaterialTheme.colorScheme.error,
+            modifier = modifier,
+        )
+        is Disposition.MoveTo -> CardLabel(
+            text = disposition.album.name,
+            color = MaterialTheme.colorScheme.tertiary,
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
+private fun CardLabel(text: String, color: Color, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleLarge,
         color = Color.White,
         modifier = modifier
-            .graphicsLayer { this.alpha = alpha() }
             .padding(16.dp)
             .background(color, RoundedCornerShape(8.dp))
             .padding(horizontal = 12.dp, vertical = 6.dp),
