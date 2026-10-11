@@ -44,6 +44,8 @@
     <string name="review_album">Album</string>
     <string name="review_favorite">Favorite</string>
     <string name="review_play_video">Play video</string>
+    <string name="review_keep_only_this">Keep only this one</string>
+    <string name="review_series_photo">Show photo %1$d of %2$d in this series</string>
 
     <string name="discard_title">Discard review?</string>
     <string name="discard_text">Your decisions have not been applied yet and will be lost.</string>
