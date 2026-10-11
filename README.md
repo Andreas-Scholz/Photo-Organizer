@@ -14,7 +14,8 @@ is March 3rd of 2026, 2025, 2024 and so on.
 - **Folder selection**: the review can be limited to certain folders, for example only the
   camera folder, leaving out images received through messengers.
 - **Swipe review**: one item at a time, swipe left to delete, right to keep. Items can also
-  be marked as favorite or moved to an album; every decision can be undone.
+  be marked as favorite or moved to an album; every decision can be undone. Photos can be
+  zoomed by pinching or double tapping to check their details.
 - **Nothing changes until you confirm**: decisions are collected and applied together at the
   end. Deleted items go to the system trash, where Android keeps them for 30 days.
 
