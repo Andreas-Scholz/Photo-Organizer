@@ -4,6 +4,7 @@ import android.content.IntentSender
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.andreasscholz.photoorganizer.data.ReviewMediaSource
 import io.github.andreasscholz.photoorganizer.data.media.MediaRepository
 import io.github.andreasscholz.photoorganizer.data.settings.SettingsRepository
 import io.github.andreasscholz.photoorganizer.domain.model.Album
@@ -59,6 +60,7 @@ private fun ChangePlan.toSteps(): List<ChangeStep> = buildList {
 @HiltViewModel
 class ReviewViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
+    private val reviewMediaSource: ReviewMediaSource,
     private val settingsRepository: SettingsRepository,
     private val reminderNotifier: ReminderNotifier,
 ) : ViewModel() {
@@ -78,7 +80,7 @@ class ReviewViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val items = mediaRepository.mediaOnThisDay(date)
+            val items = reviewMediaSource.mediaOnThisDay(date)
             val albums = mediaRepository.albums()
             _uiState.update { it.copy(isLoading = false, session = ReviewSession(items), albums = albums) }
         }

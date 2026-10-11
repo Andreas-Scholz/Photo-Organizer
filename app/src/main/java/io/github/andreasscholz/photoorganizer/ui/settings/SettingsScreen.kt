@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -30,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
@@ -37,6 +39,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.andreasscholz.photoorganizer.R
+import io.github.andreasscholz.photoorganizer.domain.model.FolderFilter
 import io.github.andreasscholz.photoorganizer.ui.common.formatTime
 import java.time.LocalTime
 
@@ -44,9 +47,11 @@ import java.time.LocalTime
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onOpenFolderSelection: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val reminderSettings by viewModel.reminderSettings.collectAsStateWithLifecycle()
+    val folderFilter by viewModel.folderFilter.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val is24Hour = DateFormat.is24HourFormat(context)
 
@@ -91,6 +96,24 @@ fun SettingsScreen(
                 headlineContent = { Text(stringResource(R.string.settings_reminder_time)) },
                 supportingContent = { Text(formatTime(settings.time, is24Hour)) },
                 modifier = Modifier.clickable(enabled = settings.enabled) { showTimePicker = true },
+            )
+
+            HorizontalDivider()
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_folders)) },
+                supportingContent = {
+                    Text(
+                        when (val filter = folderFilter) {
+                            FolderFilter.AllFolders -> stringResource(R.string.folders_all)
+                            is FolderFilter.Only -> pluralStringResource(
+                                R.plurals.settings_folders_selected,
+                                filter.relativePaths.size,
+                                filter.relativePaths.size,
+                            )
+                        },
+                    )
+                },
+                modifier = Modifier.clickable(onClick = onOpenFolderSelection),
             )
 
             if (settings.enabled && !notificationsEnabled) {

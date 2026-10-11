@@ -11,6 +11,8 @@ is March 3rd of 2026, 2025, 2024 and so on.
 - **Daily reminder** at a configurable time (default 20:00). It stays quiet if the day has
   already been reviewed or has no media.
 - **Day overview** of today's media, grouped by year.
+- **Folder selection**: the review can be limited to certain folders, for example only the
+  camera folder, leaving out images received through messengers.
 - **Swipe review**: one item at a time, swipe left to delete, right to keep. Items can also
   be marked as favorite or moved to an album; every decision can be undone.
 - **Nothing changes until you confirm**: decisions are collected and applied together at the

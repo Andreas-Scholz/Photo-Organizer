@@ -2,6 +2,8 @@ package io.github.andreasscholz.photoorganizer.data.media
 
 import android.content.IntentSender
 import io.github.andreasscholz.photoorganizer.domain.model.Album
+import io.github.andreasscholz.photoorganizer.domain.model.FolderFilter
+import io.github.andreasscholz.photoorganizer.domain.model.MediaFolder
 import io.github.andreasscholz.photoorganizer.domain.model.MediaItem
 import java.time.LocalDate
 
@@ -13,8 +15,17 @@ import java.time.LocalDate
  */
 interface MediaRepository {
 
-    /** Media captured on [date] or on the same day of an earlier year, newest year first. */
-    suspend fun mediaOnThisDay(date: LocalDate): List<MediaItem>
+    /**
+     * Media captured on [date] or on the same day of an earlier year, newest year first,
+     * limited to the folders accepted by [folderFilter].
+     */
+    suspend fun mediaOnThisDay(
+        date: LocalDate,
+        folderFilter: FolderFilter = FolderFilter.AllFolders,
+    ): List<MediaItem>
+
+    /** Every folder containing photos or videos, largest first. */
+    suspend fun folders(): List<MediaFolder>
 
     /** Existing albums that can hold both photos and videos, sorted by name. */
     suspend fun albums(): List<Album>
