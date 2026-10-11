@@ -45,10 +45,10 @@ A single `app` module, written in Kotlin with Jetpack Compose and split into lay
 
 | Package    | Responsibility                                                                 |
 |------------|--------------------------------------------------------------------------------|
-| `domain`   | Plain Kotlin without Android dependencies: models, date logic, the review session. Covered by unit tests. |
-| `data`     | `MediaRepository` (MediaStore) and `SettingsRepository` (DataStore).           |
+| `domain`   | Plain Kotlin without Android dependencies: models, date logic, the review session and the detection of photo series. Covered by unit tests. |
+| `data`     | `MediaRepository` (MediaStore), `SettingsRepository` (DataStore) and `ReviewMediaSource`, which combines the two into "the media to review on a day". |
 | `reminder` | Alarm scheduling, the broadcast receivers and the notification.                |
-| `ui`       | One package per screen (`home`, `review`, `settings`), each with a composable screen and a `ViewModel` exposing a single state flow. |
+| `ui`       | One package per screen (`home`, `review`, `settings`, `folders`), each with a composable screen and a `ViewModel` exposing a single state flow, plus shared pieces in `common` and the routes in `navigation`. |
 | `di`       | Hilt module wiring the above together.                                         |
 
 Dependencies point inwards: `ui` and `reminder` use `data` and `domain`, `data` uses
@@ -65,5 +65,11 @@ Some decisions worth knowing about:
 - **The reminder is an inexact alarm** (`AlarmManager.setAndAllowWhileIdle`), re-armed every
   time it fires and after reboots or time changes. Android may deliver it up to an hour
   late to save battery, but it needs no special permission.
+
+- **The review can be browsed freely.** `ReviewSession` keeps a movable position and one
+  decision per item, so photos can be compared and decisions revised before anything is applied.
+
+`CLAUDE.md` has more detailed notes for development, including how the app is tested on an
+emulator with the helpers in `tools/emulator`.
 
 Library versions are managed in [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
