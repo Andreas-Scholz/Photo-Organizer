@@ -1,6 +1,7 @@
 package io.github.andreasscholz.photoorganizer.ui.review
 
 import android.net.Uri
+import android.view.LayoutInflater
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -76,7 +77,7 @@ private fun VideoPlayer(uri: Uri, modifier: Modifier = Modifier) {
         onDispose { player.release() }
     }
     AndroidView(
-        factory = { PlayerView(it).apply { this.player = player } },
+        factory = { LayoutInflater.from(it).inflate(R.layout.video_player, null) as PlayerView },
         update = { it.player = player },
         modifier = modifier,
     )
