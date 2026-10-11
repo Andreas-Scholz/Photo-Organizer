@@ -87,13 +87,20 @@ class ReviewViewModel @Inject constructor(
         viewModelScope.launch {
             val items = reviewMediaSource.mediaOnThisDay(date)
             val albums = mediaRepository.albums()
-            _uiState.update { it.copy(
+            _uiState.update {
+                it.copy(
                     isLoading = false,
                     session = ReviewSession.startingAt(items, route.startItemId),
                     albums = albums,
-                ) }
+                )
+            }
         }
     }
+
+    /** Browses to the neighboring item without deciding the current one. */
+    fun showNext() = updateSession { it.goForward() }
+
+    fun showPrevious() = updateSession { it.goBack() }
 
     fun keep() = updateSession { it.decide(Disposition.Keep) }
 

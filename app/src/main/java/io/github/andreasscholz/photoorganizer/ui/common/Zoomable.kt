@@ -13,6 +13,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -86,13 +87,19 @@ class ZoomState(private val maxScale: Float = 5f) {
  *
  * Single-finger drags are left alone at the normal zoom level, so that a surrounding
  * swipe gesture keeps working until the user zooms in.
+ *
+ * [onTap] reports single taps at the normal zoom level together with the size of the box.
+ * It is called with a short delay, as a tap could still become a double tap.
  */
 @Composable
 fun ZoomableBox(
     state: ZoomState,
     modifier: Modifier = Modifier,
+    onTap: (position: Offset, boxSize: IntSize) -> Unit = { _, _ -> },
     content: @Composable () -> Unit,
 ) {
+    val currentOnTap by rememberUpdatedState(onTap)
+
     Box(
         modifier = modifier
             .clipToBounds()
@@ -119,6 +126,7 @@ fun ZoomableBox(
             .pointerInput(state) {
                 detectTapGestures(
                     onDoubleTap = { position -> state.toggle(position - size.center(), size.toSize()) },
+                    onTap = { position -> if (!state.isZoomed) currentOnTap(position, size) },
                 )
             },
     ) {
