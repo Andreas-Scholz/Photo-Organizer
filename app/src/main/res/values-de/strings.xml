@@ -39,6 +39,8 @@
     <string name="review_album">Album</string>
     <string name="review_favorite">Favorit</string>
     <string name="review_play_video">Video abspielen</string>
+    <string name="review_keep_only_this">Nur dieses behalten</string>
+    <string name="review_series_photo">Foto %1$d von %2$d dieser Serie anzeigen</string>
 
     <string name="discard_title">Durchsicht abbrechen?</string>
     <string name="discard_text">Deine Entscheidungen wurden noch nicht angewendet und gehen verloren.</string>

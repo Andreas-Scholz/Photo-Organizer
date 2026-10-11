@@ -66,6 +66,20 @@ data class ReviewSession(
         return withDecision(item, disposition).atNextOpenItem()
     }
 
+    /**
+     * Settles a whole [series] of similar items at once: the current item is kept and all
+     * others are deleted, whatever was decided for them before.
+     */
+    fun keepOnlyCurrent(series: List<MediaItem>): ReviewSession {
+        val item = current ?: return this
+        val others = series.filter { other -> other.id != item.id && items.any { it.id == other.id } }
+        return others
+            .fold(withDecision(item, Disposition.Keep)) { session, other ->
+                session.withDecision(other, Disposition.Delete)
+            }
+            .atNextOpenItem()
+    }
+
     /** Takes back the most recent decision and returns to its item. */
     fun undo(): ReviewSession {
         val last = decisions.lastOrNull() ?: return this

@@ -14,6 +14,7 @@ import io.github.andreasscholz.photoorganizer.domain.model.MediaItem
 import io.github.andreasscholz.photoorganizer.domain.review.ChangePlan
 import io.github.andreasscholz.photoorganizer.domain.review.Disposition
 import io.github.andreasscholz.photoorganizer.domain.review.ReviewSession
+import io.github.andreasscholz.photoorganizer.domain.review.findSeries
 import io.github.andreasscholz.photoorganizer.reminder.ReminderNotifier
 import io.github.andreasscholz.photoorganizer.ui.navigation.ReviewRoute
 import kotlinx.coroutines.channels.Channel
@@ -42,8 +43,13 @@ data class ReviewUiState(
     val hasAppliedChanges: Boolean = false,
     val notice: ReviewNotice? = null,
     val isCompleted: Boolean = false,
+    /** The series of similar photos each photo belongs to, by item id. */
+    val seriesByItemId: Map<Long, List<MediaItem>> = emptyMap(),
 ) {
     val canUndo: Boolean get() = session.canUndo && !isApplying && !hasAppliedChanges
+
+    /** The photos taken together with the current one; empty if it stands alone. */
+    val currentSeries: List<MediaItem> get() = session.current?.let { seriesByItemId[it.id] }.orEmpty()
 }
 
 /** One kind of change, confirmed by the user in a single system dialog. */
@@ -92,6 +98,7 @@ class ReviewViewModel @Inject constructor(
                     isLoading = false,
                     session = ReviewSession.startingAt(items, route.startItemId),
                     albums = albums,
+                    seriesByItemId = findSeries(items),
                 )
             }
         }
@@ -101,6 +108,14 @@ class ReviewViewModel @Inject constructor(
     fun showNext() = updateSession { it.goForward() }
 
     fun showPrevious() = updateSession { it.goBack() }
+
+    fun showItem(item: MediaItem) = updateSession { it.goTo(item.id) }
+
+    /** Keeps the current photo and deletes the rest of its series. */
+    fun keepOnlyCurrent() {
+        val series = _uiState.value.currentSeries
+        updateSession { it.keepOnlyCurrent(series) }
+    }
 
     fun keep() = updateSession { it.decide(Disposition.Keep) }
 

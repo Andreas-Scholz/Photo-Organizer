@@ -134,6 +134,10 @@ fun ReviewScreen(
                 item = currentItem,
                 isFavorite = session.currentIsFavorite,
                 disposition = session.dispositionOf(currentItem),
+                series = state.currentSeries,
+                dispositionOf = session::dispositionOf,
+                onShowItem = viewModel::showItem,
+                onKeepOnlyCurrent = viewModel::keepOnlyCurrent,
                 onPrevious = viewModel::showPrevious,
                 onNext = viewModel::showNext,
                 onDelete = viewModel::delete,
@@ -195,6 +199,10 @@ private fun ReviewCard(
     item: MediaItem,
     isFavorite: Boolean,
     disposition: Disposition?,
+    series: List<MediaItem>,
+    dispositionOf: (MediaItem) -> Disposition?,
+    onShowItem: (MediaItem) -> Unit,
+    onKeepOnlyCurrent: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onDelete: () -> Unit,
@@ -242,6 +250,17 @@ private fun ReviewCard(
                     )
                 }
             }
+        }
+
+        if (series.isNotEmpty()) {
+            SeriesStrip(
+                series = series,
+                currentItem = item,
+                dispositionOf = dispositionOf,
+                onItemClick = onShowItem,
+                onKeepOnlyCurrent = onKeepOnlyCurrent,
+                modifier = Modifier.padding(top = 8.dp),
+            )
         }
 
         Row(

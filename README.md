@@ -17,6 +17,10 @@ is March 3rd of 2026, 2025, 2024 and so on.
 - **Swipe review**: one item at a time, swipe left to delete, right to keep. Items can also
   be marked as favorite or moved to an album; every decision can be undone. Photos can be
   zoomed by pinching or double tapping to check their details.
+- **Browse before deciding**: tapping the right or left side of a photo shows the next or
+  previous one without deciding; decided photos can be revisited and changed.
+- **Series of similar photos**: photos taken within seconds of each other are offered side by
+  side, so the best one can be picked and the rest discarded in one step.
 - **Nothing changes until you confirm**: decisions are collected and applied together at the
   end. Deleted items go to the system trash, where Android keeps them for 30 days.
 

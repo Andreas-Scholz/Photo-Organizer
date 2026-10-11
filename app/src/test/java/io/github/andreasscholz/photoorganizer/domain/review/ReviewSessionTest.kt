@@ -163,6 +163,46 @@ class ReviewSessionTest {
         assertNull(ReviewSession(listOf(first)).dispositionOf(first))
     }
 
+    // Series
+
+    @Test
+    fun `keeping only the current item of a series deletes the others`() {
+        val alone = item(4)
+        val session = ReviewSession(listOf(first, second, third, alone))
+            .goTo(second.id)
+            .keepOnlyCurrent(listOf(first, second, third))
+
+        assertEquals(Disposition.Keep, session.dispositionOf(second))
+        assertEquals(Disposition.Delete, session.dispositionOf(first))
+        assertEquals(Disposition.Delete, session.dispositionOf(third))
+        assertEquals(alone, session.current)
+        assertEquals(listOf(first, third), session.toChangePlan().toTrash)
+    }
+
+    @Test
+    fun `keeping only the current item replaces earlier decisions in the series`() {
+        val plan = ReviewSession(listOf(first, second))
+            .decide(Disposition.Keep)
+            .keepOnlyCurrent(listOf(first, second))
+            .toChangePlan()
+
+        assertEquals(listOf(first), plan.toTrash)
+        assertEquals(1, plan.keptCount)
+    }
+
+    @Test
+    fun `the decisions for a series can be undone one by one`() {
+        val session = ReviewSession(listOf(first, second, third))
+            .keepOnlyCurrent(listOf(first, second, third))
+        assertTrue(session.isFinished)
+
+        val undone = session.undo()
+
+        assertEquals(third, undone.current)
+        assertEquals(Disposition.Delete, undone.dispositionOf(second))
+        assertEquals(Disposition.Keep, undone.dispositionOf(first))
+    }
+
     // Favorites
 
     @Test
