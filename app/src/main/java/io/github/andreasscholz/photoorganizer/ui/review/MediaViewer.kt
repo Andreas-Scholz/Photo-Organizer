@@ -3,13 +3,17 @@ package io.github.andreasscholz.photoorganizer.ui.review
 import android.net.Uri
 import android.view.LayoutInflater
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,46 +27,95 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import io.github.andreasscholz.photoorganizer.R
 import io.github.andreasscholz.photoorganizer.data.media.contentUri
 import io.github.andreasscholz.photoorganizer.domain.model.MediaItem
 import io.github.andreasscholz.photoorganizer.domain.model.MediaType
+import io.github.andreasscholz.photoorganizer.ui.common.ZoomState
+import io.github.andreasscholz.photoorganizer.ui.common.ZoomableBox
 import androidx.media3.common.MediaItem as PlayerMediaItem
 
-/** Shows a photo, or a video that starts playing once its play button is tapped. */
+/** Longest edge, in pixels, at which a photo is loaded once the user zooms in. */
+private const val DETAIL_SIZE = 4096
+
+/** Shows a zoomable photo, or a video that starts playing once its play button is tapped. */
 @Composable
 fun MediaViewer(item: MediaItem, modifier: Modifier = Modifier) {
-    var isPlaying by remember(item.id) { mutableStateOf(false) }
-
     Box(modifier = modifier.background(Color.Black), contentAlignment = Alignment.Center) {
-        if (isPlaying) {
-            VideoPlayer(uri = item.contentUri, modifier = Modifier.fillMaxSize())
-        } else {
-            AsyncImage(
-                model = item.contentUri,
-                contentDescription = item.displayName,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize(),
-            )
-            if (item.type == MediaType.VIDEO) {
-                FilledTonalIconButton(
-                    onClick = { isPlaying = true },
-                    modifier = Modifier.size(72.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_play_arrow),
-                        contentDescription = stringResource(R.string.review_play_video),
-                        modifier = Modifier.size(40.dp),
-                    )
-                }
-            }
+        when (item.type) {
+            MediaType.IMAGE -> ZoomablePhoto(item)
+            MediaType.VIDEO -> Video(item)
         }
     }
 }
 
+@Composable
+private fun ZoomablePhoto(item: MediaItem) {
+    val zoomState = remember(item.id) { ZoomState() }
+
+    // Photos are first decoded at screen size, which is fast but blurry when magnified.
+    // A sharper version is loaded on top once it is needed, and kept from then on.
+    var showDetail by remember(item.id) { mutableStateOf(false) }
+    LaunchedEffect(zoomState.isZoomed) {
+        if (zoomState.isZoomed) showDetail = true
+    }
+
+    ZoomableBox(state = zoomState, modifier = Modifier.fillMaxSize()) {
+        AsyncImage(
+            model = item.contentUri,
+            contentDescription = item.displayName,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize(),
+        )
+        if (showDetail) {
+            val context = LocalContext.current
+            AsyncImage(
+                model = remember(item.id) {
+                    ImageRequest.Builder(context)
+                        .data(item.contentUri)
+                        .size(DETAIL_SIZE, DETAIL_SIZE)
+                        .build()
+                },
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun Video(item: MediaItem) {
+    var isStarted by remember(item.id) { mutableStateOf(false) }
+
+    if (isStarted) {
+        VideoPlayer(uri = item.contentUri, modifier = Modifier.fillMaxSize())
+    } else {
+        AsyncImage(
+            model = item.contentUri,
+            contentDescription = item.displayName,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize(),
+        )
+        FilledTonalIconButton(
+            onClick = { isStarted = true },
+            modifier = Modifier.size(72.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_play_arrow),
+                contentDescription = stringResource(R.string.review_play_video),
+                modifier = Modifier.size(40.dp),
+            )
+        }
+    }
+}
+
+/** Plays [uri] right away; tapping the picture pauses and resumes it. */
 @Composable
 private fun VideoPlayer(uri: Uri, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -73,12 +126,52 @@ private fun VideoPlayer(uri: Uri, modifier: Modifier = Modifier) {
             playWhenReady = true
         }
     }
+    var isPlaying by remember(player) { mutableStateOf(true) }
     DisposableEffect(player) {
+        val listener = object : Player.Listener {
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                isPlaying = playWhenReady && player.playbackState != Player.STATE_ENDED
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                isPlaying = player.playWhenReady && playbackState != Player.STATE_ENDED
+            }
+        }
+        player.addListener(listener)
         onDispose { player.release() }
     }
-    AndroidView(
-        factory = { LayoutInflater.from(it).inflate(R.layout.video_player, null) as PlayerView },
-        update = { it.player = player },
-        modifier = modifier,
-    )
+
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        AndroidView(
+            factory = { LayoutInflater.from(it).inflate(R.layout.video_player, null) as PlayerView },
+            update = { it.player = player },
+            modifier = Modifier.fillMaxSize(),
+        )
+        // The player view would swallow all touches, including the swipes of the review card.
+        // This layer receives them instead and only reacts to taps.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                    when {
+                        player.playbackState == Player.STATE_ENDED -> {
+                            player.seekTo(0)
+                            player.play()
+                        }
+                        player.playWhenReady -> player.pause()
+                        else -> player.play()
+                    }
+                },
+        )
+        if (!isPlaying) {
+            Icon(
+                painter = painterResource(R.drawable.ic_play_arrow),
+                contentDescription = stringResource(R.string.review_play_video),
+                tint = Color.White,
+                modifier = Modifier
+                    .size(72.dp)
+                    .background(Color.Black.copy(alpha = 0.5f), CircleShape),
+            )
+        }
+    }
 }
