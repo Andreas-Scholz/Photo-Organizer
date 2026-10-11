@@ -70,7 +70,7 @@ class ReviewViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<ReviewRoute>()
-    private val date: LocalDate = LocalDate.now()
+    private val date: LocalDate = LocalDate.ofEpochDay(route.dateEpochDay)
 
     private val _uiState = MutableStateFlow(ReviewUiState())
     val uiState: StateFlow<ReviewUiState> = _uiState.asStateFlow()

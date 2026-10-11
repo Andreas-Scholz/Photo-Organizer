@@ -21,6 +21,17 @@ fun anniversariesOf(date: LocalDate, earliestYear: Int = EARLIEST_YEAR): List<Lo
         .map { monthDay.atYear(it) }
 }
 
+/**
+ * The review day for an arbitrary [date]: the same calendar day in the year of [today], so
+ * that its anniversaries reach up to the present no matter which year [date] is in.
+ * February 29th falls back to the latest leap year.
+ */
+fun reviewDayOf(date: LocalDate, today: LocalDate): LocalDate {
+    val monthDay = MonthDay.from(date)
+    val year = (today.year downTo today.year - 7).first { monthDay.isValidYear(it) }
+    return monthDay.atYear(year)
+}
+
 /** The local-time extent of each anniversary of [date]; days are not always 24 hours long. */
 fun anniversaryRangesOf(
     date: LocalDate,

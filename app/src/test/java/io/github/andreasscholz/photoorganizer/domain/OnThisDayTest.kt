@@ -36,6 +36,29 @@ class OnThisDayTest {
     }
 
     @Test
+    fun `review day is the picked calendar day in the current year`() {
+        val today = LocalDate.of(2026, 10, 11)
+
+        assertEquals(LocalDate.of(2026, 3, 3), reviewDayOf(LocalDate.of(2019, 3, 3), today))
+        assertEquals(LocalDate.of(2026, 12, 24), reviewDayOf(LocalDate.of(2026, 12, 24), today))
+    }
+
+    @Test
+    fun `paging across new year stays in the current year`() {
+        val today = LocalDate.of(2026, 10, 11)
+
+        assertEquals(LocalDate.of(2026, 1, 1), reviewDayOf(LocalDate.of(2026, 12, 31).plusDays(1), today))
+        assertEquals(LocalDate.of(2026, 12, 31), reviewDayOf(LocalDate.of(2026, 1, 1).minusDays(1), today))
+    }
+
+    @Test
+    fun `review day for february 29th is in the latest leap year`() {
+        val today = LocalDate.of(2026, 10, 11)
+
+        assertEquals(LocalDate.of(2024, 2, 29), reviewDayOf(LocalDate.of(2020, 2, 29), today))
+    }
+
+    @Test
     fun `ranges span the local day`() {
         val range = anniversaryRangesOf(LocalDate.of(2026, 7, 1), berlin, earliestYear = 2026).single()
 
