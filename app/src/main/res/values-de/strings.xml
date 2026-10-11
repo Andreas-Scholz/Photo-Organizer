@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_back">Zurück</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_ok">OK</string>
+    <string name="action_settings">Einstellungen</string>
+
+    <!-- Home -->
+    <plurals name="home_media_count">
+        <item quantity="one">%d Foto oder Video</item>
+        <item quantity="other">%d Fotos und Videos</item>
+    </plurals>
+    <plurals name="home_year_count">
+        <item quantity="one">aus %d Jahr</item>
+        <item quantity="other">aus %d Jahren</item>
+    </plurals>
+    <string name="home_start_review">Durchsehen starten</string>
+    <string name="home_review_again">Erneut durchsehen</string>
+    <string name="home_completed">Für heute erledigt</string>
+    <string name="home_empty_title">Nichts zu tun</string>
+    <string name="home_empty_text">Von diesem Tag gibt es keine Fotos oder Videos.</string>
+    <string name="home_partial_access">Es sind nur die von dir ausgewählten Fotos sichtbar. Erlaube den Zugriff auf alle Fotos, um den ganzen Tag zu sehen.</string>
+
+    <!-- Media permission -->
+    <string name="permission_title">Zugriff auf deine Fotos</string>
+    <string name="permission_text">Photo Organizer braucht Zugriff auf deine Fotos und Videos, um zu zeigen, was du an diesem Tag aufgenommen hast. Nichts verlässt dein Gerät.</string>
+    <string name="permission_grant">Zugriff erlauben</string>
+    <string name="permission_open_settings">App-Einstellungen öffnen</string>
+
+    <!-- Review -->
+    <string name="review_close">Durchsicht beenden</string>
+    <string name="review_undo">Rückgängig</string>
+    <string name="review_delete">Löschen</string>
+    <string name="review_keep">Behalten</string>
+    <string name="review_album">Album</string>
+    <string name="review_favorite">Favorit</string>
+    <string name="review_play_video">Video abspielen</string>
+
+    <string name="discard_title">Durchsicht abbrechen?</string>
+    <string name="discard_text">Deine Entscheidungen wurden noch nicht angewendet und gehen verloren.</string>
+    <string name="discard_confirm">Verwerfen</string>
+    <string name="discard_dismiss">Weiter durchsehen</string>
+
+    <string name="album_picker_title">In Album verschieben</string>
+    <string name="album_new">Neues Album</string>
+    <string name="album_name_label">Albumname</string>
+    <string name="album_create">Erstellen</string>
+
+    <!-- Summary -->
+    <string name="summary_title">Zusammenfassung</string>
+    <plurals name="summary_trash">
+        <item quantity="one">%d Element in den Papierkorb verschieben</item>
+        <item quantity="other">%d Elemente in den Papierkorb verschieben</item>
+    </plurals>
+    <plurals name="summary_favorite">
+        <item quantity="one">%d Element als Favorit markieren</item>
+        <item quantity="other">%d Elemente als Favoriten markieren</item>
+    </plurals>
+    <plurals name="summary_unfavorite">
+        <item quantity="one">%d Element aus den Favoriten entfernen</item>
+        <item quantity="other">%d Elemente aus den Favoriten entfernen</item>
+    </plurals>
+    <plurals name="summary_move">
+        <item quantity="one">%1$d Element nach „%2$s“ verschieben</item>
+        <item quantity="other">%1$d Elemente nach „%2$s“ verschieben</item>
+    </plurals>
+    <plurals name="summary_keep">
+        <item quantity="one">%d Element behalten</item>
+        <item quantity="other">%d Elemente behalten</item>
+    </plurals>
+    <string name="summary_no_changes">Keine Änderungen – alles bleibt, wie es ist.</string>
+    <string name="summary_confirm_hint">Android bittet dich, jede Art von Änderung zu bestätigen.</string>
+    <string name="summary_apply">Änderungen anwenden</string>
+    <string name="summary_continue">Fortfahren</string>
+    <string name="summary_done">Fertig</string>
+    <string name="summary_declined">Nicht alle Änderungen wurden bestätigt. Tippe auf den Button, um dort weiterzumachen.</string>
+    <plurals name="summary_move_failed">
+        <item quantity="one">%d Element konnte nicht verschoben werden.</item>
+        <item quantity="other">%d Elemente konnten nicht verschoben werden.</item>
+    </plurals>
+
+    <!-- Settings -->
+    <string name="settings_reminder">Tägliche Erinnerung</string>
+    <string name="settings_reminder_summary">Benachrichtigt dich einmal am Tag, wenn es etwas durchzusehen gibt</string>
+    <string name="settings_reminder_time">Uhrzeit</string>
+    <string name="settings_notifications_disabled">Benachrichtigungen sind für diese App ausgeschaltet, daher können keine Erinnerungen angezeigt werden.</string>
+    <string name="settings_enable_notifications">Benachrichtigungseinstellungen</string>
+
+    <!-- Reminder notification -->
+    <string name="reminder_channel_name">Tägliche Erinnerung</string>
+    <string name="reminder_title">Zeit für deine Fotos</string>
+    <plurals name="reminder_text">
+        <item quantity="one">%d Foto oder Video von diesem Tag wartet.</item>
+        <item quantity="other">%d Fotos und Videos von diesem Tag warten.</item>
+    </plurals>
+    <string name="reminder_text_unknown_count">Sieh dir an, was du an diesem Tag aufgenommen hast.</string>
+</resources>

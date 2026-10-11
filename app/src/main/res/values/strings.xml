@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Photo Organizer</string>
+
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Home -->
+    <plurals name="home_media_count">
+        <item quantity="one">%d photo or video</item>
+        <item quantity="other">%d photos and videos</item>
+    </plurals>
+    <plurals name="home_year_count">
+        <item quantity="one">from %d year</item>
+        <item quantity="other">from %d years</item>
+    </plurals>
+    <string name="home_summary" translatable="false">%1$s %2$s</string>
+    <string name="home_year_header" translatable="false">%1$d · %2$d</string>
+    <string name="home_start_review">Start review</string>
+    <string name="home_review_again">Review again</string>
+    <string name="home_completed">Done for today</string>
+    <string name="home_empty_title">Nothing to review</string>
+    <string name="home_empty_text">There are no photos or videos from this day.</string>
+    <string name="home_partial_access">Only the photos you selected are visible. Allow access to all photos to see the whole day.</string>
+
+    <!-- Media permission -->
+    <string name="permission_title">Access to your photos</string>
+    <string name="permission_text">Photo Organizer needs access to your photos and videos to show what you captured on this day. Nothing leaves your device.</string>
+    <string name="permission_grant">Allow access</string>
+    <string name="permission_open_settings">Open app settings</string>
+
+    <!-- Review -->
+    <string name="review_position" translatable="false">%1$d / %2$d</string>
+    <string name="review_close">Close review</string>
+    <string name="review_undo">Undo</string>
+    <string name="review_delete">Delete</string>
+    <string name="review_keep">Keep</string>
+    <string name="review_album">Album</string>
+    <string name="review_favorite">Favorite</string>
+    <string name="review_play_video">Play video</string>
+
+    <string name="discard_title">Discard review?</string>
+    <string name="discard_text">Your decisions have not been applied yet and will be lost.</string>
+    <string name="discard_confirm">Discard</string>
+    <string name="discard_dismiss">Continue reviewing</string>
+
+    <string name="album_picker_title">Move to album</string>
+    <string name="album_new">New album</string>
+    <string name="album_name_label">Album name</string>
+    <string name="album_create">Create</string>
+
+    <!-- Summary -->
+    <string name="summary_title">Summary</string>
+    <plurals name="summary_trash">
+        <item quantity="one">Move %d item to the trash</item>
+        <item quantity="other">Move %d items to the trash</item>
+    </plurals>
+    <plurals name="summary_favorite">
+        <item quantity="one">Mark %d item as favorite</item>
+        <item quantity="other">Mark %d items as favorites</item>
+    </plurals>
+    <plurals name="summary_unfavorite">
+        <item quantity="one">Remove %d item from favorites</item>
+        <item quantity="other">Remove %d items from favorites</item>
+    </plurals>
+    <plurals name="summary_move">
+        <item quantity="one">Move %1$d item to “%2$s”</item>
+        <item quantity="other">Move %1$d items to “%2$s”</item>
+    </plurals>
+    <plurals name="summary_keep">
+        <item quantity="one">Keep %d item</item>
+        <item quantity="other">Keep %d items</item>
+    </plurals>
+    <string name="summary_no_changes">No changes – everything stays as it is.</string>
+    <string name="summary_confirm_hint">Android asks you to confirm each kind of change.</string>
+    <string name="summary_apply">Apply changes</string>
+    <string name="summary_continue">Continue</string>
+    <string name="summary_done">Done</string>
+    <string name="summary_declined">Not all changes were confirmed. Tap the button to continue where you left off.</string>
+    <plurals name="summary_move_failed">
+        <item quantity="one">%d item could not be moved.</item>
+        <item quantity="other">%d items could not be moved.</item>
+    </plurals>
+
+    <!-- Settings -->
+    <string name="settings_reminder">Daily reminder</string>
+    <string name="settings_reminder_summary">Notifies you once a day if there is something to review</string>
+    <string name="settings_reminder_time">Reminder time</string>
+    <string name="settings_notifications_disabled">Notifications are turned off for this app, so reminders cannot be shown.</string>
+    <string name="settings_enable_notifications">Notification settings</string>
+
+    <!-- Reminder notification -->
+    <string name="reminder_channel_name">Daily reminder</string>
+    <string name="reminder_title">Time to tidy up your photos</string>
+    <plurals name="reminder_text">
+        <item quantity="one">%d photo or video from this day is waiting.</item>
+        <item quantity="other">%d photos and videos from this day are waiting.</item>
+    </plurals>
+    <string name="reminder_text_unknown_count">Take a look at what you captured on this day.</string>
+</resources>
